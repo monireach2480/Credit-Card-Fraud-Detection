@@ -187,15 +187,6 @@ notebooks/06_final_pipeline_export.ipynb
 - Recall and PR-AUC matter more than raw accuracy
 - SHAP explainability improves trust and real-world usability
 
----
-
-## 🔮 Future Work
-
-- [ ] Deploy model using FastAPI + Streamlit
-- [ ] Optimize decision threshold based on business cost
-- [ ] Add real-time fraud scoring
-- [ ] Integrate SHAP explanations into the UI
-- [ ] Explore deep learning approaches (e.g., Autoencoders)
 
 
 ---
