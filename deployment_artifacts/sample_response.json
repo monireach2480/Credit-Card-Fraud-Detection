@@ -1,6 +1,6 @@
 {
     "prediction": 0,
-    "fraud_probability": 0.03226643055677414,
+    "fraud_probability": 2.588052723240253e-07,
     "threshold": 0.5,
     "label": "Not Fraud"
 }
