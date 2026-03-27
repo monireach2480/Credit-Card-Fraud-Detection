@@ -4,16 +4,6 @@ A machine learning system that detects fraudulent credit card transactions using
 
 ---
 
-## Project Structure
-
-```
-Credit-Card-Fraud-Detection/
-├── data/
-│   ├── raw/               # Original dataset (creditcard.csv)
-│   └── processed/         # Train/test splits, scaled features, SMOTE output
-# 💳 Credit Card Fraud Detection using Machine Learning
-
----
 
 ## 📌 Project Overview
 
