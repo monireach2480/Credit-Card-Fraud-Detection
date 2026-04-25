@@ -1,6 +1,6 @@
 """
 FastAPI Backend — Credit Card Fraud Detection
-Loads trained artifacts from deployment_artifacts/ and exposes a /predict endpoint.
+Loads trained artifacts from models/improved/ and exposes a /predict endpoint.
 """
 
 import os
@@ -13,26 +13,37 @@ from pydantic import BaseModel
 from typing import Dict, Any
 
 # ── Paths ─────────────────────────────────────────────────────────────────────
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-ARTIFACTS_DIR = os.path.join(BASE_DIR, "deployment_artifacts")
+BASE_DIR      = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+IMPROVED_DIR  = os.path.join(BASE_DIR, "models", "improved")
+MODELS_DIR    = os.path.join(BASE_DIR, "models", "final")  # Changed from "models" to "models/final"
+PROCESSED_DIR = os.path.join(BASE_DIR, "data", "processed")
 
 # ── Load artifacts at startup ─────────────────────────────────────────────────
 try:
-    model = joblib.load(os.path.join(ARTIFACTS_DIR, "final_model.pkl"))
-    scaler = joblib.load(os.path.join(ARTIFACTS_DIR, "scaler.pkl"))
-    feature_columns = joblib.load(os.path.join(ARTIFACTS_DIR, "feature_columns.pkl"))
-    threshold = joblib.load(os.path.join(ARTIFACTS_DIR, "threshold.pkl"))
+    # Updated model — XGBoost Tuned + Optimal Threshold from Notebook 6
+    model           = joblib.load(os.path.join(IMPROVED_DIR, "xgb_tuned_improved.pkl"))
+
+    # Scaler is unchanged — still from Notebook 2
+    scaler          = joblib.load(os.path.join(MODELS_DIR, "scaler.pkl"))
+
+    # Threshold is now 0.9410 (optimal from PR-curve) instead of 0.5
+    threshold       = joblib.load(os.path.join(IMPROVED_DIR, "xgb_best_threshold.pkl"))
+
+    # Feature columns — full 30 features (SHAP selection did not improve performance)
+    X_train_scaled  = pd.read_csv(os.path.join(PROCESSED_DIR, "X_train_scaled.csv"))
+    feature_columns = X_train_scaled.columns.tolist()
+
 except FileNotFoundError as e:
     raise RuntimeError(
-        f"Missing artifact: {e}. Make sure deployment_artifacts/ exists and "
-        "notebook 06_final_pipeline_export.ipynb has been run."
+        f"Missing artifact: {e}. Make sure notebook_06_improvements.py "
+        "has been run and models/improved/ exists."
     )
 
 # ── App ───────────────────────────────────────────────────────────────────────
 app = FastAPI(
     title="Credit Card Fraud Detection API",
     description="Predict whether a credit card transaction is fraudulent.",
-    version="1.0.0",
+    version="2.0.0",
 )
 
 app.add_middleware(
@@ -110,10 +121,11 @@ def root():
 @app.get("/health", tags=["Health"])
 def health():
     return {
-        "status": "ok",
+        "status"      : "ok",
+        "model"       : "XGBoost Tuned + Optimal Threshold (Notebook 6)",
         "model_loaded": model is not None,
-        "threshold": float(threshold),
-        "features": len(feature_columns),
+        "threshold"   : float(threshold),
+        "features"    : len(feature_columns),
     }
 
 
@@ -125,25 +137,22 @@ def predict(transaction: TransactionInput) -> Dict[str, Any]:
     Returns prediction (0/1), fraud probability, and the label.
     """
     try:
-        # Convert input to DataFrame and reorder columns
         input_dict = transaction.model_dump()
-        df = pd.DataFrame([input_dict])
-        df = df[feature_columns]
+        df         = pd.DataFrame([input_dict])
+        df         = df[feature_columns]
 
-        # Scale features
-        X_scaled = scaler.transform(df)
+        X_scaled   = scaler.transform(df)
 
-        # Get fraud probability and apply threshold
         fraud_prob = float(model.predict_proba(X_scaled)[0][1])
         prediction = int(fraud_prob >= threshold)
-        label = "Fraud" if prediction == 1 else "Not Fraud"
+        label      = "Fraud" if prediction == 1 else "Not Fraud"
 
         return {
-            "prediction": prediction,
-            "label": label,
+            "prediction"      : prediction,
+            "label"           : label,
             "fraud_probability": round(fraud_prob, 6),
-            "threshold": float(threshold),
-            "features_used": len(feature_columns),
+            "threshold"       : float(threshold),
+            "features_used"   : len(feature_columns),
         }
 
     except Exception as e:
@@ -154,19 +163,19 @@ def predict(transaction: TransactionInput) -> Dict[str, Any]:
 def predict_batch(transactions: list[TransactionInput]):
     """Predict on multiple transactions at once."""
     try:
-        rows = [t.model_dump() for t in transactions]
-        df = pd.DataFrame(rows)[feature_columns]
-        X_scaled = scaler.transform(df)
-        probs = model.predict_proba(X_scaled)[:, 1]
+        rows       = [t.model_dump() for t in transactions]
+        df         = pd.DataFrame(rows)[feature_columns]
+        X_scaled   = scaler.transform(df)
+        probs      = model.predict_proba(X_scaled)[:, 1]
         predictions = (probs >= threshold).astype(int)
 
         return {
-            "count": len(transactions),
+            "count"  : len(transactions),
             "results": [
                 {
-                    "index": i,
-                    "prediction": int(predictions[i]),
-                    "label": "Fraud" if predictions[i] == 1 else "Not Fraud",
+                    "index"            : i,
+                    "prediction"       : int(predictions[i]),
+                    "label"            : "Fraud" if predictions[i] == 1 else "Not Fraud",
                     "fraud_probability": round(float(probs[i]), 6),
                 }
                 for i in range(len(transactions))
