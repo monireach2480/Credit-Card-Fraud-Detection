@@ -1,17 +1,6 @@
-# Credit Card Fraud Detection
+# 💳 Credit Card Fraud Detection using Machine Learning
 
 A machine learning system that detects fraudulent credit card transactions using XGBoost with SHAP explainability, deployed via FastAPI and Streamlit.
-
----
-
-## Project Structure
-
-```
-Credit-Card-Fraud-Detection/
-├── data/
-│   ├── raw/               # Original dataset (creditcard.csv)
-│   └── processed/         # Train/test splits, scaled features, SMOTE output
-# 💳 Credit Card Fraud Detection using Machine Learning
 
 ---
 
@@ -35,12 +24,13 @@ This project builds a machine learning pipeline to detect fraudulent transaction
 ---
 
 ## 📂 Project Structure
+
 ```
 Credit-Card-Fraud-Detection/
 │
 ├── data/
-│   ├── raw/
-│   └── processed/
+│   ├── raw/                        # Original dataset (creditcard.csv)
+│   └── processed/                  # Train/test splits, scaled features, SMOTE output
 │
 ├── notebooks/
 │   ├── 01_data_understanding_eda.ipynb
@@ -49,47 +39,146 @@ Credit-Card-Fraud-Detection/
 │   ├── 04_xgboost_tuning.ipynb
 │   ├── 05_evaluation_explainability.ipynb
 │   └── 06_final_pipeline_export.ipynb
+│
 ├── src/
-│   ├── data_preprocessing.py   # Load, split, scale, SMOTE
-│   ├── train_model.py          # LR, RF, XGBoost training
-│   ├── evaluate.py             # Metrics, ROC/PR curves, threshold tuning
-│   ├── explain.py              # SHAP explanations
-│   └── utils.py                # Shared utilities
+│   ├── data_preprocessing.py       # Load, split, scale, SMOTE
+│   ├── train_model.py              # LR, RF, XGBoost training
+│   ├── evaluate.py                 # Metrics, ROC/PR curves, threshold tuning
+│   ├── explain.py                  # SHAP explanations
+│   └── utils.py                    # Shared utilities
+│
 ├── models/
-│   ├── baseline/          # logistic_regression, random_forest .pkl files
-│   └── final/             # best_xgboost_model.pkl
-├── deployment_artifacts/  # final_model.pkl, scaler.pkl, threshold.pkl, schemas
+│   ├── baseline/                   # logistic_regression.pkl, random_forest.pkl
+│   └── final/                      # best_xgboost_model.pkl
+│
+├── deployment_artifacts/
+│   ├── final_model.pkl
+│   ├── scaler.pkl
+│   ├── threshold.pkl
+│   └── feature_columns.pkl
+│
 ├── reports/
-│   ├── figures/           # Saved plots (ROC, confusion matrix, SHAP)
-│   └── tables/            # CSV result tables
+│   ├── figures/                    # Saved plots (ROC, confusion matrix, SHAP)
+│   └── tables/                     # CSV result tables
+│
 ├── api/
-│   └── main.py            # FastAPI backend
+│   └── main.py                     # FastAPI backend
+│
 ├── app/
-│   └── streamlit_app.py   # Streamlit frontend
+│   └── streamlit_app.py            # Streamlit frontend
+│
 ├── requirements.txt
 └── .gitignore
 ```
 
 ---
 
-## Model Performance
+## 📊 Dataset
 
-| Metric    | Score  |
-|-----------|--------|
-| Precision | 0.88   |
-| Recall    | 0.84   |
-| F1        | 0.86   |
-| ROC-AUC   | 0.97   |
-| PR-AUC    | 0.88   |
-
-**Final model:** XGBoost with `scale_pos_weight ≈ 577`  
-**Key features:** V14, V4, V12 (SHAP analysis)
+| Property | Details |
+|----------|---------|
+| Source | Credit card transactions dataset |
+| Features | `Time`, `Amount`, and anonymized features `V1–V28` |
+| Target | `Class` → `0` = Non-Fraud, `1` = Fraud |
+| Challenge | Highly imbalanced dataset (fraud cases are very rare) |
 
 ---
 
-## Setup
+## ⚙️ Methodology
+
+### 1. Data Understanding & EDA
+- Checked data structure and missing values
+- Analyzed class imbalance
+- Explored feature distributions
+- Compared fraud vs. non-fraud patterns
+
+### 2. Data Preprocessing
+- Train-test split (stratified)
+- Feature scaling using `StandardScaler`
+- Imbalance handling via SMOTE (applied only on training data)
+- Saved: scaled datasets, resampled datasets, raw datasets for deployment
+
+### 3. Baseline Models
+- Logistic Regression
+- Random Forest
+
+Evaluated using: Precision, Recall, F1-score, ROC-AUC, PR-AUC
+
+### 4. Advanced Modeling — XGBoost
+
+Implemented multiple approaches:
+- Initial XGBoost model
+- XGBoost with `scale_pos_weight`
+- XGBoost trained on SMOTE data
+- Hyperparameter tuning via `RandomizedSearchCV`
+
+Key tuning parameters: `n_estimators`, `max_depth`, `learning_rate`, `subsample`, `colsample_bytree`, `min_child_weight`
+
+### 5. Model Selection
+
+> 👉 **Final Model: XGBoost with `scale_pos_weight`**
+
+Selected for its best balance between Precision, Recall, F1-score, and PR-AUC — making it most suitable for real-world fraud detection.
+
+### 6. Evaluation
+
+| Metric | Score |
+|--------|-------|
+| Precision | ~0.88 |
+| Recall | ~0.84 |
+| F1-Score | ~0.86 |
+| ROC-AUC | ~0.97 |
+| PR-AUC | ~0.88 |
+
+Visualizations: Confusion Matrix · ROC Curve · Precision-Recall Curve
+
+### 7. Explainability — SHAP
+- Global feature importance
+- Local explanations for individual predictions
+- Key features identified: `V14`, `V4`, `V12`
+
+### 8. Prediction Pipeline
+
+An end-to-end prediction function that:
+- Accepts raw transaction input
+- Applies preprocessing (scaling)
+- Predicts fraud probability
+- Applies classification threshold
+- Returns prediction results
+
+---
+
+## 🚀 Deployment
+
+### Backend — FastAPI
+- Load model and preprocessing artifacts
+- Provide `/predict` API endpoint
+- Return prediction and probability
+
+### Frontend — Streamlit
+- User input interface
+- Display fraud prediction results
+- Communicate with FastAPI backend
+
+---
+
+## 📦 Deployment Artifacts
+
+```
+deployment_artifacts/
+├── final_model.pkl
+├── scaler.pkl
+├── feature_columns.pkl
+└── threshold.pkl
+```
+
+---
+
+## 🛠️ Setup
 
 ```bash
+git clone <your-repo-link>
+cd Credit-Card-Fraud-Detection
 pip install -r requirements.txt
 ```
 
@@ -97,37 +186,44 @@ pip install -r requirements.txt
 
 ---
 
-## Run the Project
+## ▶️ Usage
 
 ### 1. Explore Notebooks
+
 ```bash
 jupyter notebook
 ```
-Run notebooks in order: 01 → 02 → 03 → 04 → 05 → 06
+
+Run notebooks in order: `01` → `02` → `03` → `04` → `05` → `06`
 
 ### 2. Start the API
+
 ```bash
 uvicorn api.main:app --reload
 ```
+
 API docs available at: http://127.0.0.1:8000/docs
 
 ### 3. Start the Streamlit App
+
 ```bash
 streamlit run app/streamlit_app.py
 ```
+
 > Make sure the API is running first.
 
 ---
 
 ## API Endpoints
 
-| Method | Endpoint        | Description                   |
-|--------|-----------------|-------------------------------|
-| GET    | `/health`       | Check API status              |
-| POST   | `/predict`      | Predict a single transaction  |
-| POST   | `/predict/batch`| Predict multiple transactions |
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/health` | Check API status |
+| POST | `/predict` | Predict a single transaction |
+| POST | `/predict/batch` | Predict multiple transactions |
 
 **Example request:**
+
 ```bash
 curl -X POST http://127.0.0.1:8000/predict \
   -H "Content-Type: application/json" \
@@ -150,149 +246,9 @@ curl -X POST http://127.0.0.1:8000/predict \
 ## Key Technical Decisions
 
 - **Metric priority:** Recall > Precision (missing fraud is more costly than a false alert)
-- **Imbalance handling:** `scale_pos_weight` (more stable than SMOTE for tree models)  
+- **Imbalance handling:** `scale_pos_weight` (more stable than SMOTE for tree models)
 - **Explainability:** SHAP TreeExplainer for global + local feature attribution
 - **Avoid accuracy:** Dataset is ~99.8% non-fraud; accuracy is misleading
-│
-├── models/
-│   ├── baseline/
-│   └── final/
-│
-├── reports/
-│   └── tables/
-│
-├── deployment_artifacts/
-│
-├── api/                # FastAPI backend (to be implemented)
-├── app/                # Streamlit frontend (to be implemented)
-│
-├── requirements.txt
-└── README.md
-```
-
----
-
-## 📊 Dataset
-
-| Property | Details |
-|----------|---------|
-| **Source** | Credit card transactions dataset |
-| **Features** | `Time`, `Amount`, and anonymized features `V1–V28` |
-| **Target** | `Class` → `0` = Non-Fraud, `1` = Fraud |
-| **Challenge** | Highly imbalanced dataset (fraud cases are very rare) |
-
----
-
-## ⚙️ Methodology
-
-### 1. Data Understanding & EDA
-- Checked data structure and missing values
-- Analyzed class imbalance
-- Explored feature distributions
-- Compared fraud vs. non-fraud patterns
-
-### 2. Data Preprocessing
-- Train-test split (stratified)
-- Feature scaling using `StandardScaler`
-- Imbalance handling via **SMOTE** (applied only on training data)
-- Saved: scaled datasets, resampled datasets, raw datasets for deployment
-
-### 3. Baseline Models
-- Logistic Regression
-- Random Forest
-
-Evaluated using: Precision, Recall, F1-score, ROC-AUC, PR-AUC
-
-### 4. Advanced Modeling — XGBoost
-Implemented multiple approaches:
-- Initial XGBoost model
-- XGBoost with `scale_pos_weight`
-- XGBoost trained on SMOTE data
-- Hyperparameter tuning via `RandomizedSearchCV`
-
-Key tuning parameters: `n_estimators`, `max_depth`, `learning_rate`, `subsample`, `colsample_bytree`, `min_child_weight`
-
-### 5. Model Selection
-
-> 👉 **Final Model: XGBoost with `scale_pos_weight`**
-
-Selected for its best balance between precision, recall, F1-score, and PR-AUC — making it most suitable for real-world fraud detection.
-
-### 6. Evaluation
-
-| Metric | Score |
-|--------|-------|
-| Precision | ~0.88 |
-| Recall | ~0.84 |
-| F1-Score | ~0.86 |
-| ROC-AUC | ~0.97 |
-| PR-AUC | ~0.88 |
-
-Visualizations: Confusion Matrix · ROC Curve · Precision-Recall Curve
-
-### 7. Explainability — SHAP
-- Global feature importance
-- Local explanations for individual predictions
-- Key features identified: `V14`, `V4`, `V12`
-
-### 8. Prediction Pipeline
-An end-to-end prediction function that:
-- Accepts raw transaction input
-- Applies preprocessing (scaling)
-- Predicts fraud probability
-- Applies classification threshold
-- Returns prediction results
-
----
-
-## 🚀 Deployment (Planned)
-
-### Backend — FastAPI
-- Load model and preprocessing artifacts
-- Provide `/predict` API endpoint
-- Return prediction and probability
-
-### Frontend — Streamlit
-- User input interface
-- Display fraud prediction results
-- Communicate with FastAPI backend
-
----
-
-## 📦 Deployment Artifacts
-
-Saved for integration:
-```
-deployment_artifacts/
-├── final_model.pkl
-├── scaler.pkl
-├── feature_columns.pkl
-└── threshold.pkl
-```
-
----
-
-## 🛠️ Installation
-```bash
-git clone <your-repo-link>
-cd Credit-Card-Fraud-Detection
-pip install -r requirements.txt
-```
-
----
-
-## ▶️ Usage
-
-**Run Notebooks**
-```bash
-jupyter notebook notebooks/
-```
-
-**Test Prediction Pipeline**
-```bash
-# Open and run:
-notebooks/06_final_pipeline_export.ipynb
-```
 
 ---
 
@@ -303,8 +259,6 @@ notebooks/06_final_pipeline_export.ipynb
 - Handling imbalance is critical for meaningful performance
 - Recall and PR-AUC matter more than raw accuracy
 - SHAP explainability improves trust and real-world usability
-
-
 
 ---
 
