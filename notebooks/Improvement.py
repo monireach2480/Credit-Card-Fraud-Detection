@@ -374,7 +374,9 @@ def plot_cm(y_true, y_pred, title):
     plt.xlabel("Predicted")
     plt.ylabel("Actual")
     plt.tight_layout()
+    plt.savefig(f"../reports/tables/{title.replace(' ', '_')}_cm.png", dpi=150)
     plt.show()
+    
 
 plot_cm(y_test, y_pred_xgb_tuned,  "XGBoost Tuned + Optimal Threshold")
 plot_cm(y_test, y_pred_lgbm_tuned, "LightGBM Tuned + Optimal Threshold")
